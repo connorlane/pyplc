@@ -3,34 +3,32 @@
 from pymodbus.client.sync import ModbusTcpClient
 import struct 
 
-NUM_INPUTS = 4
-NUM_OUTPUTS = 2
+class PyPlc:
+	def __init__(self, ip, port = 502):
+		
+		client = ModbusTcpClient('192.168.0.221', port=502)
+		connected = client.connect()
 
-client = ModbusTcpClient('192.168.0.221', port=502)
-connected = client.connect()
+	def AnalogRead(address):
+		rr = client.read_holding_registers(address, count=2, unit=1)
 
-def ReadInput(client, input_num):
-	assert(input_num >= 0 and input_num < NUM_INPUTS)
+		a = int(rr.registers[0])
+		b = int(rr.registers[1])
 
-	rr = client.read_holding_registers(28672, count=2, unit=1)
+		return struct.unpack("<f", struct.pack("<HH", a, b))[0]	#read from modbus	
 
-	a = int(rr.registers[0])
-	b = int(rr.registers[1])
+	def AnalogWrite(address, value):
+		assert(type(value) is float)
+	
+		[a, b] = struct.unpack("<HH", struct.pack("<f", value))	
 
-	return struct.unpack("<f", struct.pack("<HH", a, b))[0]
+		rr = client.write_register(address, a)
+		rr = client.write_register(address + 1, b)
 
-def WriteOutput(client, output_num, value):
-	assert(output_num >=0 and output_num < NUM_OUTPUTS)
+	def DigitalWrite(address, value):
+		assert(value == True or value == False)
+		rq = client.write_coil(address, value)
 
-	[a, b] = struct.unpack("<HH", struct.pack("<f", value))	
-
-	print a
-	print b
-
-	rr = client.write_register(output_num + 28692, a)
-	rr = client.write_register(output_num + 28693, b)
-
-print ReadInput(client, 1)
-
-WriteOutput(client, 0, 3.14159)
+	def DigitalRead(address):
+		rq = client.read_coil(address, count=1, unit=1)
 
