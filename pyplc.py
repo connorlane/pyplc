@@ -5,12 +5,11 @@ import struct
 
 class PyPlc:
 	def __init__(self, ip, port = 502):
-		
-		client = ModbusTcpClient('192.168.0.221', port=502)
-		connected = client.connect()
+		self.client = ModbusTcpClient(ip, port=502)
+		connected = self.client.connect()
 
 	def AnalogRead(address):
-		rr = client.read_holding_registers(address, count=2, unit=1)
+		rr = self.client.read_holding_registers(address, count=2, unit=1)
 
 		a = int(rr.registers[0])
 		b = int(rr.registers[1])
@@ -22,13 +21,15 @@ class PyPlc:
 	
 		[a, b] = struct.unpack("<HH", struct.pack("<f", value))	
 
-		rr = client.write_register(address, a)
-		rr = client.write_register(address + 1, b)
+		rr = self.client.write_register(address, a)
+		rr = self.client.write_register(address + 1, b)
 
 	def DigitalWrite(address, value):
 		assert(value == True or value == False)
-		rq = client.write_coil(address, value)
+		rq = self.client.write_coil(address, value)
 
 	def DigitalRead(address):
-		rq = client.read_coil(address, count=1, unit=1)
+		rq = self.client.read_coil(address, count=1, unit=1)
 
+    def __del__(self):
+        self.client.disconnect() 
